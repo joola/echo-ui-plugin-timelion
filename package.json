@@ -32,6 +32,7 @@
     "yargs": "^3.29.0"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel/register series_functions/__test__/*.js"
+    "test": "mocha --compilers js:babel/register series_functions/__test__/*.js",
+    "postinstall": "bower install --allow-root"
   }
 }
