@@ -15,10 +15,9 @@
     </div>
   </kbn-top-nav>
 
-  <navbar class="timelion-navbar" scroll-class="timelion-scroll-class-header" scroll-limit=45 ng-show="chrome.getVisible()">
+  <navbar class="timelion-navbar" scroll-class="timelion-scroll-class-header" scroll-limit=27 ng-show="chrome.getVisible()">
     <form role="form" class="fill inline-form" ng-submit="search()" name="discoverSearch">
-      <div class="input-group"
-        ng-class="discoverSearch.$invalid ? 'has-error' : ''">
+      <div class="input-group">
         <input input-focus
           ng-model="state.sheet[state.selected]"
           timelion-expression="{{state.sheet[state.selected]}}"
@@ -29,15 +28,15 @@
 
         <timelion-interval model="state.interval"></timelion-interval>
 
-        <button type="submit"
-          ng-disabled="discoverSearch.$invalid"
-          aria-label="Search">
-          <span aria-hidden="true" class="fa fa-play"></span></button>
+        <button aria-label="Search" type="submit">
+          <span class="fa fa-play"></span>
+        </button>
+
       </div>
     </form>
   </navbar>
 
-  <div class="timelion-container" scroll-class="timelion-scroll-class-body" scroll-limit=45>
+  <div class="timelion-container" scroll-class="timelion-scroll-class-body" scroll-limit=27>
     <div class="timelion-container-sheet">
       <div class="timelion-container-sheet-margin"
         sv-root sv-part="state.sheet"
@@ -48,7 +47,7 @@
           ng-click="setActiveCell($index)"
           ng-class="{active: $index === state.selected}"
           >
-          <div chart="sheet[$index]" search="search"></div>
+          <div chart="sheet[$index]" search="search" interval="state.interval"></div>
           <div class="cell-actions">
             <div class="cell-id" ng-click="removeCell($index)" tooltip="Remove" tooltip-append-to-body="1"><span>{{$index + 1}}</span></div>
             <div class="cell-move" tooltip="Drag to reorder" tooltip-append-to-body="1" sv-handle><span class="fa fa-arrows"></span></div>

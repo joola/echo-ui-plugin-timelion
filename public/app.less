@@ -58,6 +58,11 @@
       color: #000;
     }
   }
+
+  .config .list-group-item .container-fluid {
+    background-color: transparent;
+    padding: 0;
+  }
 }
 
 .timelion:after {
@@ -109,9 +114,11 @@ navbar.timelion-navbar {
 
 .timelion-scroll-class {
   &-header {
+    border-top: 5px solid @navbar-default-bg;
     top: 0;
+    left: @as-closed-width;
+    right: 0px;
     position: fixed;
-    width: 100%;
   }
 
   &-options {
@@ -119,7 +126,7 @@ navbar.timelion-navbar {
   }
 
   &-body {
-    margin-top: 65px;
+    margin-top: 60px;
   }
 }
 

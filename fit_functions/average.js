@@ -9,18 +9,19 @@ module.exports = function (dataTuples, targetTuples) {
   // Phase 1: Downsample
   // We nessecarily won't well match the dataSource here as we don't know how much data
   // they had when creating their own average
-  var resultTimes = _.pluck(targetTuples,0);
+  var resultTimes = _.pluck(targetTuples, 0);
+  var dataTuplesQueue = _.clone(dataTuples);
   var resultValues = _.map(targetTuples, function (bucket) {
     var time = bucket[0];
     var i = 0;
     var avgSet = [];
 
-    while (i < dataTuples.length && dataTuples[i][0] <= time) {
-      avgSet.push(dataTuples[i][1]);
+    while (i < dataTuplesQueue.length && dataTuplesQueue[i][0] <= time) {
+      avgSet.push(dataTuplesQueue[i][1]);
       i++;
     }
 
-    dataTuples.splice(0, i);
+    dataTuplesQueue.splice(0, i);
 
     var sum = _.reduce(avgSet, function (sum, num) { return sum + num; }, 0);
 

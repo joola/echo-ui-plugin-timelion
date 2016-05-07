@@ -1,6 +1,7 @@
 var _ = require('lodash');
 var $ = require('jquery');
-var moment = require('moment');
+var moment = require('moment-timezone');
+var observeResize = require('./observe_resize');
 
 require('flot');
 require('flotTime');
@@ -8,19 +9,28 @@ require('flotCrosshair');
 require('flotCanvas');
 require('flotSelection');
 require('flotSymbol');
+require('flotStack');
+
+require('./observe_resize');
 
 var app = require('ui/modules').get('apps/timelion', []);
 var template = '<div class="chart-title"></div><div class="chart-canvas"></div>';
 
-app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Private) {
+app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Private, config) {
   return {
     restrict: 'A',
     scope: {
       chart: '=', // The flot object, data, config and all
-      search: '=' // The function to execute to kick off a search
+      search: '=', // The function to execute to kick off a search
+      interval: '=' // Required for formatting x-axis ticks
     },
     link: function ($scope, $elem) {
       var timezone = Private(require('plugins/timelion/services/timezone'))();
+      var getxAxisFormatter = Private(require('./xaxis_formatter'));
+
+      // TODO: I wonder if we should supply our own moment that sets this every time?
+      // could just use angular's injection to provide a moment service?
+      moment.tz.setDefault(config.get('dateFormat:tz'));
 
       $scope.search = $scope.search || _.noop;
 
@@ -30,7 +40,7 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
         canvas: true,
         xaxis: {
           mode: 'time',
-          tickLength: 0,
+          tickLength: 5,
           timezone: 'browser'
         },
         selection: {
@@ -70,16 +80,18 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
         drawPlot($scope.chart);
       };
 
+      /*
       $(window).resize(function () {
         if (!$scope.plot) return;
         console.log('redrawing');
         $timeout(function () {
-          // This is a lot faster than calling drawPlot(); Stolen from the borked flot.resize plugin
-          // TODO: Currently resizing breaks tooltips
-          $scope.plot.resize();
-          $scope.plot.setupGrid();
-          $scope.plot.draw();
+          drawPlot($scope.chart);
         }, 0);
+      });
+      */
+
+      observeResize($elem, function () {
+        drawPlot($scope.chart);
       });
 
       $scope.$on('$destroy', function () {
@@ -181,6 +193,21 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
         $('.chart-title', $elem).text(title == null ? '' : title);
 
         var options = _.cloneDeep(defaultOptions);
+
+
+        // Get the X-axis tick format
+        var format = getxAxisFormatter($scope.interval);
+
+        // Use moment to format ticks so we get timezone correction
+        options.xaxis.tickFormatter = function (val) {
+          return moment(val).format(format);
+        };
+
+        // Calculate how many ticks can fit on the axis
+        var tickLetterWidth = 7;
+        var tickPadding = 45;
+        options.xaxis.ticks = Math.floor($elem.width() / ((format.length * tickLetterWidth) + tickPadding));
+
         var series = _.map(plotConfig, function (series, index) {
           series = _.cloneDeep(_.defaults(series, {
             shadowSize: 0,
@@ -192,6 +219,7 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
 
           if (series._hide) {
             series.data = [];
+            series.stack = false;
             //series.color = "#ddd";
             series.label = '(hidden) ' + series.label;
           }

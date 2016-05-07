@@ -10,13 +10,15 @@ Pull data from an elasticsearch instance
 Argument | Accepts | Description
 --- | --- | ---
 q | *string* | Query in lucene query string syntax  
-metric | *string* | An elasticsearch single value metric agg, eg avg, sum, min, max or cardinality, followed by a field. Eg "sum:bytes"  
+metric | *string* | An elasticsearch single value metric agg, eg avg, sum, min, max or cardinality, followed by a field. Eg "sum:bytes", or just "count"  
+split | *string* | An elasticsearch field to split the series on and a limit. Eg, "hostname:10" to get the top 10 hostnames  
 index | *string* | Index to query, wildcards accepted  
 timefield | *string* | Field of type "date" to use for x-axis  
+kibana | *boolean* | Respect filters on Kibana dashboards. Only has an effect when using on Kibana dashboards  
 interval | *string* | **DO NOT USE THIS**. Its fun for debugging fit functions, but you really should use the interval picker  
 url | *string* | Elasticsearch server URL, eg http://localhost:9200  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 #### .graphite()
 Pull data from graphite. Configure your graphite server in timelion.json
@@ -25,7 +27,7 @@ Argument | Accepts | Description
 --- | --- | ---
 metric | *string* | Graphite metric to pull, eg _test-data.users.*.data  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 #### .quandl()
 Pull data from quandl.com using the quandl code. Stick your free API key in timelion.json. API is rate limited without a key
@@ -35,7 +37,7 @@ Argument | Accepts | Description
 code | *string* | The quandl code to plot. You can find these on quandl.com.  
 position | *number* | Some quandl sources return multiple series, which one should I use? 1 based index.  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 #### .static()
 Draws a single value across the chart
@@ -45,7 +47,7 @@ Argument | Accepts | Description
 value | *number* | The single vale to to display  
 label | *string* | A quick way to set the label for the series. You could also use the .label() function  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 #### .worldbank_indicators()
 Pull data from http://data.worldbank.org/ using the country name and indicator. The worldbank provides mostly yearly data, and often has no data for the current year. Try offset=-1y if you get no data for recent time ranges.
@@ -55,7 +57,7 @@ Argument | Accepts | Description
 country | *string* | Worldbank country identifier. Usually the country's 2 letter code  
 indicator | *string* | The indicator code to use. You'll have to look this up on data.worldbank.org. Often pretty obtuse. Eg SP.POP.TOTL is population  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 #### .worldbank()
 Pull data from http://data.worldbank.org/ using path to series. The worldbank provides mostly yearly data, and often has no data for the current year. Try offset=-1y if you get no data for recent time ranges.
@@ -64,7 +66,7 @@ Argument | Accepts | Description
 --- | --- | ---
 code | *string* | Worldbank API path. This is usually everything after the domain, before the querystring. Eg: /en/countries/ind;chn/indicators/DPANUSSPF.  
 offset | *string* | Offset the series retrieval by a date expression. Eg -1M to make events from one month ago appear as if they are happening now  
-fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, nearest, none, scale  
+fit | *string* | Algorithm to use for fitting series to the target time span and interval. Available: average, carry, nearest, none, scale  
 
 ### Chainable functions
 Chainable functions can not start a chain. Somewhere before them must be a data source function. Chainable functions modify the data output directly from a data source, or from another chainable function that has a data source somewhere before it.
@@ -80,13 +82,14 @@ Show the seriesList as bars
 Argument | Accepts | Description
 --- | --- | ---
 width | *number* | Width of bars in pixels  
+stack | *boolean* | Should bars be stacked, true by default  
 
 #### .color()
 Change the color of the series
 
 Argument | Accepts | Description
 --- | --- | ---
-color | *string* | Color of series, as hex, eg #c6c6c6 is a lovely light grey.  
+color | *string* | Color of series, as hex, eg #c6c6c6 is a lovely light grey. If you specify multiple colors, and have multiple series, you will get a gradient, eg "#00B1CC:#00FF94:#FF3A39:#CC1A6F"  
 
 #### .condition()
 Compares each point to a number, or the same point in another series using an operator, then sets its valueto the result if the condition proves true, with an optional else.
@@ -122,6 +125,13 @@ This is an internal function that simply returns the input seriesList. Don't use
 
 *This function does not accept any arguments.*
 
+#### .fit()
+Fills null values using a defined fit function
+
+Argument | Accepts | Description
+--- | --- | ---
+mode | *string* | The algorithm to use for fitting the series to the target. One of: average, carry, nearest, none, scale  
+
 #### .hide()
 Hide the series by default
 
@@ -142,7 +152,7 @@ Set the position and style of the legend on the plot
 
 Argument | Accepts | Description
 --- | --- | ---
-position | *string* | Corner to place the legend in: nw, ne, se, or sw  
+position | *string/boolean* | Corner to place the legend in: nw, ne, se, or sw. You can also pass false to disable the legend  
 columns | *number* | Number of columns to divide the legend into  
 
 #### .lines()
@@ -152,22 +162,23 @@ Argument | Accepts | Description
 --- | --- | ---
 width | *number* | Line thickness  
 fill | *number* | Number between 0 and 10. Use for making area charts  
-show | *number* | Show or hide lines  
-steps | *number* | Show line as step, eg, do not interpolate between points  
+stack | *boolean* | Stack lines, often misleading. At least use some fill if you use this.  
+show | *number/boolean* | Show or hide lines  
+steps | *number/boolean* | Show line as step, eg, do not interpolate between points  
 
 #### .max()
 Maximum values of one or more series in a seriesList to each position, in each series, of the input seriesList
 
 Argument | Accepts | Description
 --- | --- | ---
-value | *seriesList/number* | Number, series to max with the input series. If passing a seriesList it must contain exactly 1 series.  
+value | *seriesList/number* | Sets the point to whichever is higher, the existing value, or the one passed. If passing a seriesList it must contain exactly 1 series.  
 
 #### .min()
 Minimum values of one or more series in a seriesList to each position, in each series, of the input seriesList
 
 Argument | Accepts | Description
 --- | --- | ---
-value | *seriesList/number* | Number, series to min with the input series. If passing a seriesList it must contain exactly 1 series.  
+value | *seriesList/number* | Sets the point to whichever is lower, the existing value, or the one passed. If passing a seriesList it must contain exactly 1 series.  
 
 #### .movingaverage()
 Calculate the moving average over a given window. Nice for smoothing noisey series
@@ -238,16 +249,6 @@ Adds the values of one or more series in a seriesList to each position, in each 
 Argument | Accepts | Description
 --- | --- | ---
 term | *seriesList/number* | Number or series to sum with the input series. If passing a seriesList it must contain exactly 1 series.  
-
-#### .testcast()
-Use holt-winters to forecast values. Basically useless. I have no idea how this works.
-
-Argument | Accepts | Description
---- | --- | ---
-count | *number* | *no help available*  
-alpha | *number* | *no help available*  
-beta | *number* | *no help available*  
-gamma | *number* | *no help available*  
 
 #### .title()
 Adds a title to the top of the plot. If called on more than 1 seriesList the last call will be used.

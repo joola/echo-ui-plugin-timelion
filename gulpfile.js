@@ -12,6 +12,9 @@ var eslint = require('gulp-eslint');
 var rimraf = require('rimraf');
 var zip = require('gulp-zip');
 var fs = require('fs');
+var child = require('child_process');
+var semver = require('semver');
+var mocha = require('gulp-mocha');
 
 var pkg = require('./package.json');
 var packageName = pkg.name  + '-' + pkg.version;
@@ -43,7 +46,7 @@ var exclude = Object.keys(pkg.devDependencies).map(function (name) {
 });
 
 function writeDocs(done) {
-  require('babel-register');
+  require('babel-core/register');
   var fs = require('fs');
   var helpish = require('./lib/functions_md');
 
@@ -98,6 +101,17 @@ gulp.task('docs', function (done) {
   writeDocs(done);
 });
 
+gulp.task('version', function (done) {
+  var kibanaVersion = pkg.version.split('-')[0];
+  var timelionVersion = pkg.version.split('-')[1];
+  var newVersion = kibanaVersion + '-' + '0.1.' + (semver.patch(timelionVersion) + 1);
+  child.exec('npm version --no-git-tag-version ' + newVersion, function () {
+    console.log('Timelion version is ' + newVersion);
+    done();
+  });
+});
+
+
 gulp.task('lint', function (done) {
   return gulp.src(['server/**/*.js', 'public/**/*.js', 'public/**/*.jsx'])
     // eslint() attaches the lint output to the eslint property
@@ -112,7 +126,7 @@ gulp.task('lint', function (done) {
 });
 
 gulp.task('clean', function (done) {
-  Promise.each([buildDir, targetDir], function (dir) {
+  Promise.each([packageRoot, targetDir], function (dir) {
     return new Promise(function (resolve, reject) {
       rimraf(dir, function (err) {
         if (err) return reject(err);
@@ -141,6 +155,8 @@ gulp.task('release', ['package'], function (done) {
   _.each(keys, function (key) {
     if (yargs.latest) {
       key += 'timelion-latest.zip';
+    } else if (yargs.asVersion) {
+      key += 'timelion-' + yargs.asVersion + '.zip';
     } else {
       key += filename;
     }
@@ -181,5 +197,14 @@ gulp.task('dev', ['sync'], function (done) {
     'routes/**/*',
     'series_functions/**/*',
     'timelion.json'
-  ], ['sync', 'lint']);
+  ], ['sync', 'test']);
+});
+
+gulp.task('test', ['lint'], function () {
+  require('babel-core/register');
+  return gulp.src([
+    'series_functions/__test__/**/*.js'
+  ], { read: false })
+  .pipe(mocha({ reporter: 'list' }))
+  .on('error', gulpUtil.log);
 });
