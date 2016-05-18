@@ -10,6 +10,8 @@ require('flotCanvas');
 require('flotSelection');
 require('flotSymbol');
 require('flotStack');
+require('flotAxisLabels');
+
 
 require('./observe_resize');
 
@@ -69,7 +71,6 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
               '<span class="ngLegendValueNumber"></span></span>';
           }
         },
-        yaxes: [ {}, { position: 'right' } ],
         colors: ['#01A4A4', '#C66', '#D0D102', '#616161', '#00A1CB', '#32742C', '#F18D05', '#113F8C', '#61AE24', '#D70060']
       };
 
@@ -225,7 +226,11 @@ app.directive('chart', function ($compile, $rootScope, timefilter, $timeout, Pri
           }
 
           if (series._global) {
-            _.merge(options, series._global);
+            _.merge(options, series._global, function (objVal, srcVal) {
+              // This is kind of gross, it means that you can't replace a global value with a null
+              // best you can do is an empty string. Deal with it.
+              if (objVal == null) return srcVal;
+            });
           }
 
           return series;

@@ -32,12 +32,9 @@ var include = [
   'node_modules',
   'public',
   'bower_components',
-  'fit_functions',
-  'handlers',
+  'vendor_components',
   'init.js',
-  'lib',
-  'routes',
-  'series_functions',
+  'server',
   'timelion.json',
   'timelion.private.json'
 ];
@@ -48,7 +45,7 @@ var exclude = Object.keys(pkg.devDependencies).map(function (name) {
 function writeDocs(done) {
   require('babel-core/register');
   var fs = require('fs');
-  var helpish = require('./lib/functions_md');
+  var helpish = require('./server/lib/functions_md');
 
   fs.writeFile(path.resolve(__dirname, 'FUNCTIONS.md'), helpish, function (err) {
     if (err) {
@@ -113,7 +110,7 @@ gulp.task('version', function (done) {
 
 
 gulp.task('lint', function (done) {
-  return gulp.src(['server/**/*.js', 'public/**/*.js', 'public/**/*.jsx'])
+  return gulp.src(['server/**/*.js', 'public/**/*.js'])
     // eslint() attaches the lint output to the eslint property
     // of the file object so it can be used by other modules.
     .pipe(eslint())
@@ -190,20 +187,17 @@ gulp.task('dev', ['sync'], function (done) {
     'node_modules',
     'public/**/*',
     'bower_components',
-    'fit_functions/*',
-    'handlers/**/*',
+    'vendor_components',
     'init.js',
-    'lib/**/*',
-    'routes/**/*',
-    'series_functions/**/*',
+    'server/**/*',
     'timelion.json'
-  ], ['sync', 'test']);
+  ], ['sync', 'lint', 'test']);
 });
 
-gulp.task('test', ['lint'], function () {
+gulp.task('test', [], function () {
   require('babel-core/register');
   return gulp.src([
-    'series_functions/__test__/**/*.js'
+    'server/**/__test__/**/*.js'
   ], { read: false })
   .pipe(mocha({ reporter: 'list' }))
   .on('error', gulpUtil.log);
