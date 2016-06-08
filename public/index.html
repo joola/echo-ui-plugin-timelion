@@ -1,4 +1,4 @@
-<div class="timelion app-container" ng-controller="timelion">
+<div class="timelion app-container" ng-controller="timelion" fixed-element-root>
 
   <kbn-top-nav name="timelion" config="topNavMenu">
     <div class="kibana-nav-info ng-scope">
@@ -15,7 +15,7 @@
     </div>
   </kbn-top-nav>
 
-  <navbar class="timelion-navbar" scroll-class="timelion-scroll-class-header" scroll-limit=27 ng-show="chrome.getVisible()">
+  <navbar class="timelion-navbar" fixed-element="timelion-navbar-fixed">
     <form role="form" class="fill inline-form" ng-submit="search()" name="discoverSearch">
       <div class="input-group">
         <input input-focus
@@ -36,22 +36,30 @@
     </form>
   </navbar>
 
-  <div class="timelion-container" scroll-class="timelion-scroll-class-body" scroll-limit=27>
+  <div class="timelion-container" fixed-element-body="timelion-container-fixed">
     <div class="timelion-container-sheet">
-      <div class="timelion-container-sheet-margin"
-        sv-root sv-part="state.sheet"
-        sv-on-sort="drop($item, $partFrom, $partTo, $indexFrom, $indexTo)">
-        <div class="chart-container col-md-{{12 / state.columns}} col-sm-12 col-xs-12" sv-element
-          timelion-grid timelion-grid-rows="state.rows"
-          ng-repeat="cell in state.sheet track by $index"
-          ng-click="setActiveCell($index)"
-          ng-class="{active: $index === state.selected}"
+      <div class="timelion-container-sheet-margin">
+
+          <timelion-fullscreen
+            ng-show="transient.fullscreen"
+            transient="transient"
+            state="state"
+            series="sheet[state.selected]"
+            expression="state.sheet[state.selected]"
+            on-search="search"
           >
-          <div chart="sheet[$index]" search="search" interval="state.interval"></div>
-          <div class="cell-actions">
-            <div class="cell-id" ng-click="removeCell($index)" tooltip="Remove" tooltip-append-to-body="1"><span>{{$index + 1}}</span></div>
-            <div class="cell-move" tooltip="Drag to reorder" tooltip-append-to-body="1" sv-handle><span class="fa fa-arrows"></span></div>
-          </div>
+          </timelion-fullscreen>
+
+          <timelion-cells
+            ng-show="!transient.fullscreen"
+            transient="transient"
+            state="state"
+            sheet="sheet"
+            on-search="search"
+            on-select="setActiveCell"
+          >
+          </timelion-cells>
+
         </div>
       </div>
     </div>

@@ -256,6 +256,14 @@ Argument | Accepts | Description
 --- | --- | ---
 title | *string* | Title for the plot.  
 
+#### .trim()
+Set N buckets at the start or end of a series to null to fit the "partial bucket issue"
+
+Argument | Accepts | Description
+--- | --- | ---
+start | *number* | Buckets to trim from the beginning of the series. Default: 1  
+end | *number* | Buckets to trim from the end of the series. Default: 1  
+
 #### .yaxis()
 Configures a variety of y-axis options, the most important likely being the ability to add an Nth (eg 2nd) y-axis
 
@@ -267,4 +275,13 @@ max | *number* | Max value
 position | *string* | left or right  
 label | *string* | Label for axis  
 color | *string* | Color of axis label  
+
+#### .trend()
+Fills null values using a defined fit function
+
+Argument | Accepts | Description
+--- | --- | ---
+mode | *string* | The algorithm to use for generating the trend line. One of: linear, log  
+start | *number* | Where to start calculating from the beginning or end. For example -10 would start calculating 10 points from the end, +15 would start 15 points from the beginning. Default: 0  
+end | *number* | Where to stop calculating from the beginning or end. For example -10 would stop calculating 10 points from the end, +15 would stop 15 points from the beginning. Default: 0  
 

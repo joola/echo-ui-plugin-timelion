@@ -3,17 +3,13 @@ var logoUrl = require('./logo.png');
 var configFile = require('../timelion.json');
 var moment = require('moment-timezone');
 
-require('angularSortableView');
-
-
-
-require('plugins/timelion/directives/chart/chart');
+require('plugins/timelion/directives/cells/cells');
+require('plugins/timelion/directives/fullscreen/fullscreen');
 require('plugins/timelion/directives/interval/interval');
-
 require('plugins/timelion/directives/expression_directive');
-require('plugins/timelion/directives/scroll_class');
-require('plugins/timelion/directives/timelion_grid');
+require('plugins/timelion/directives/fixed_element');
 require('plugins/timelion/directives/docs');
+
 require('plugins/timelion/app.less');
 
 var timelionLogo = require('plugins/timelion/header.svg');
@@ -25,7 +21,7 @@ require('ui/chrome')
   'smallLogo': 'url(' + timelionLogo + ') left no-repeat #e8488b'
 }).setTabs([]);
 
-var app = require('ui/modules').get('apps/timelion', ['angular-sortable-view']);
+var app = require('ui/modules').get('apps/timelion', []);
 
 require('plugins/timelion/services/saved_sheets');
 require('plugins/timelion/services/_saved_sheet');
@@ -107,7 +103,7 @@ app.controller('timelion', function (
     }
   }, 0);
 
-
+  $scope.transient = {};
   $scope.state = new AppState(getStateDefaults());
   function getStateDefaults() {
     return {
@@ -157,11 +153,6 @@ app.controller('timelion', function (
     docTitle.change(savedSheet.id ? newTitle : undefined);
   });
 
-  $scope.drop = function (item, partFrom, partTo, indexFrom, indexTo) {
-    $scope.state.selected = indexTo;
-    _.move($scope.sheet, indexFrom, indexTo);
-  };
-
   $scope.toggle = function (property) {
     $scope[property] = !$scope[property];
   };
@@ -176,12 +167,8 @@ app.controller('timelion', function (
     $scope.safeSearch();
   };
 
-  $scope.removeCell = function (index) {
-    _.pullAt($scope.state.sheet, index);
-    $scope.safeSearch();
-  };
-
   $scope.setActiveCell = function (cell) {
+    console.log(cell);
     $scope.state.selected = cell;
   };
 
