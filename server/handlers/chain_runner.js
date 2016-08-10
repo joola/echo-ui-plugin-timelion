@@ -5,17 +5,18 @@ var Promise = require('bluebird');
 
 var parseSheet = require('./lib/parse_sheet.js');
 var parseDateMath = require('../lib/date_math.js');
-var loadFunctions = require('../lib/load_functions.js');
+var calculateInterval = require('../../public/lib/calculate_interval.js');
+
 var repositionArguments = require('./lib/reposition_arguments.js');
 var indexArguments = require('./lib/index_arguments.js');
-var getFunctionByName = require('./lib/get_function_by_name.js');
-var preprocessChain = require('./lib/preprocess_chain');
 var validateTime = require('./lib/validate_time.js');
 
-var functions  = loadFunctions('series_functions');
+var loadFunctions = require('../lib/load_functions.js');
 var fitFunctions  = loadFunctions('fit_functions');
 
 module.exports = function (tlConfig) {
+  var preprocessChain = require('./lib/preprocess_chain')(tlConfig);
+
   var queryCache = {};
   var stats = {};
   var sheet;
@@ -30,7 +31,7 @@ module.exports = function (tlConfig) {
 
   // Invokes a modifier function, resolving arguments into series as needed
   function invoke(fnName, args) {
-    var functionDef = getFunctionByName(fnName);
+    var functionDef = tlConfig.server.plugins.timelion.getFunction(fnName);
 
     function resolveArgument(item) {
       if (_.isArray(item)) {
@@ -40,7 +41,7 @@ module.exports = function (tlConfig) {
       if (_.isObject(item)) {
         switch (item.type) {
           case 'function':
-            var itemFunctionDef = getFunctionByName(item.function);
+            var itemFunctionDef = tlConfig.server.plugins.timelion.getFunction(item.function);
             if (itemFunctionDef.cacheKey && queryCache[itemFunctionDef.cacheKey(item)]) {
               stats.queryCount++;
               return Promise.resolve(_.cloneDeep(queryCache[itemFunctionDef.cacheKey(item)]));
@@ -74,6 +75,7 @@ module.exports = function (tlConfig) {
     }
 
     args = repositionArguments(functionDef, args);
+
     args = _.map(args, resolveArgument);
 
     return Promise.all(args).then(function (args) {
@@ -113,7 +115,9 @@ module.exports = function (tlConfig) {
     });
     return Promise.all(seriesList).then(function (args) {
       var list = _.chain(args).pluck('list').flatten().value();
-      return {type: 'seriesList', list: list};
+      var seriesList = _.merge.apply(this, _.flatten([{}, args]));
+      seriesList.list = list;
+      return seriesList;
     });
   }
 
@@ -142,7 +146,7 @@ module.exports = function (tlConfig) {
       stats.queryTime = (new Date()).getTime();
 
       _.each(queries, function (query, i) {
-        var functionDef = getFunctionByName(query.function);
+        var functionDef = tlConfig.server.plugins.timelion.getFunction(query.function);
         var resolvedDatasource = resolvedDatasources[i];
 
         if (resolvedDatasource.isRejected()) {
@@ -169,6 +173,13 @@ module.exports = function (tlConfig) {
     tlConfig.time = request.time;
     tlConfig.time.to = parseDateMath(request.time.to, true).valueOf();
     tlConfig.time.from = parseDateMath(request.time.from).valueOf();
+    tlConfig.time.interval = calculateInterval(
+      tlConfig.time.from,
+      tlConfig.time.to,
+      tlConfig.file.target_buckets || 200,
+      tlConfig.time.interval
+    );
+
     tlConfig.setTargetSeries();
 
     stats.invokeTime = (new Date()).getTime();
@@ -181,7 +192,7 @@ module.exports = function (tlConfig) {
       return _.map(sheet, function (chainList, i) {
         return resolveChainList(chainList).then(function (seriesList) {
           stats.sheetTime = (new Date()).getTime();
-          return seriesList.list;
+          return seriesList;
         }).catch(function (e) {
           throwWithCell(i, e);
         });
